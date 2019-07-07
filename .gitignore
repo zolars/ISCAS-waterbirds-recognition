@@ -1,0 +1,10 @@
+.vscode
+.env
+data
+archive
+model
+log
+ssl
+
+*.pyc
+*.pth
