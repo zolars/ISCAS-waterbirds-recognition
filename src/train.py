@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 """Fine-tune all layers for bilinear CNN.
 This is the second step.
-$ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/train_fc.log&
-$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 80 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/train_all.log&
+$ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/bcnn_train_fc.log&
+$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 80 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
 """
 
 import os
+import sys
 import time
 
 import torch
@@ -65,11 +66,13 @@ class BCNNManager(object):
 
         # Network.
         if self._paths['pretrained'] is not None:
+            self._all_fc_key = "all"
             self._net = torch.nn.DataParallel(
                 model.BCNN(num_classes=200, is_all=True)).cuda()
             self._net.load_state_dict(torch.load(self._paths['pretrained']),
                                       strict=False)
         else:
+            self._all_fc_key = "fc"
             self._net = torch.nn.DataParallel(
                 model.BCNN(num_classes=200, is_all=False)).cuda()
         print(self._net)
@@ -117,11 +120,11 @@ class BCNNManager(object):
                 root=self._datapath, train=False)
         self._train_loader = torch.utils.data.DataLoader(
             train_data, batch_size=self._options['batch_size'], shuffle=True,
-            num_workers=4, pin_memory=False)
+            num_workers=4, pin_memory=True)
         self._test_loader = torch.utils.data.DataLoader(
             test_data,
-            batch_size=(64 if self._paths['pretrained'] is not None else 4096),
-            shuffle=False, num_workers=4, pin_memory=False)
+            batch_size=(64 if self._all_fc_key is 'fc' else 4096),
+            shuffle=True, num_workers=4, pin_memory=True)
 
     def train(self):
         """Train the network."""
@@ -156,8 +159,10 @@ class BCNNManager(object):
                 loss.backward()
                 self._optimizer.step()
                 del instances, labels, score, loss, prediction
+
             train_acc = 100 * num_correct / num_total
             test_acc = self._accuracy(self._test_loader)
+
             if test_acc > best_acc:
                 best_acc = test_acc
                 best_epoch = t + 1
@@ -253,4 +258,5 @@ def main():
 
 
 if __name__ == '__main__':
+
     main()

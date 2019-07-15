@@ -93,11 +93,9 @@ USAGE
     # Get relu5-3 features from VGG-16 ImageNet pre-trained model.
     # It gives 75.47% accuracy on CUB.
     $ CUDA_VISIBLE_DEVICES=0 python ./src/get_conv.py
-    $ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 | tee "[fc-] base_lr_1e0-weight_decay_1e-5_.log" $
+    $ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/train_fc.log&
 
     Step 2. Fine-tune all layers.
     # It gives 84.41% accuracy on CUB.
-    $ CUDA_VISIBLE_DEVICES=0,1,2,3 python ./src/train.py --base_lr 1e-2 \
-          --batch_size 64 --epochs 80 --weight_decay 1e-5 \
-          --pretrained "bcnn_fc_epoch_.pth" \
-          | tee "[all-] base_lr_1e-2-weight_decay_1e-5.log"
+    $ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 80 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/train_all.log&
+
