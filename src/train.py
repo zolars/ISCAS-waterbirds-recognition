@@ -3,7 +3,7 @@
 """Fine-tune all layers for bilinear CNN.
 This is the second step.
 $ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/bcnn_train_fc.log&
-$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 80 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
+$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 30 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
 """
 
 import os
@@ -57,7 +57,7 @@ class BCNNManager(object):
         print('Prepare the network and data.')
 
         # GPUs
-        os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
+        os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
 
         # Configurations.
         self._options = options
@@ -71,6 +71,7 @@ class BCNNManager(object):
                 model.BCNN(num_classes=200, is_all=True)).cuda()
             self._net.load_state_dict(torch.load(self._paths['pretrained']),
                                       strict=False)
+            print("donedonedone_all")
         else:
             self._all_fc_key = "fc"
             self._net = torch.nn.DataParallel(
@@ -123,7 +124,7 @@ class BCNNManager(object):
             num_workers=4, pin_memory=True)
         self._test_loader = torch.utils.data.DataLoader(
             test_data,
-            batch_size=(64 if self._all_fc_key is 'fc' else 4096),
+            batch_size=(64 if self._all_fc_key is 'fc' else 64),
             shuffle=True, num_workers=4, pin_memory=True)
 
     def train(self):

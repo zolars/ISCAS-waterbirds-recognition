@@ -28,16 +28,20 @@ http://birdid.iscas.ac.cn:5000/upload
 
 ### 代码部署
 
-```sh
+```
 conda env create -f environment.yml
 conda activate bird
-conda install flask gunicorn gevent pytorch torchvision cudatoolkit=9.0 -c pytorch
+```
+
+or
+```
+$ conda env update -f environment.yml
 ```
 
 ### 开启 & 关闭
 
 开启
-```sh
+```
 conda activate bird
 
 nohup gunicorn -b 127.0.0.1:8000 -t 3600 src.cas_bird_server:app > ./log/server.log&
@@ -46,7 +50,7 @@ nohup gunicorn -b 127.0.0.1:7000 -t 3600 src.cas_bird_server_http:app > ./log/se
 ```
 
 关闭
-```sh
+```
 netstat netstat -plnt
 kill -9 xxxxxx 
 ```

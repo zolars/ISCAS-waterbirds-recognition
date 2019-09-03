@@ -1,10 +1,8 @@
 .vscode
-.env
 data
 archive
 model
 log
-ssl
-
+__pycache__
 *.pyc
 *.pth

@@ -1,0 +1,16 @@
+name: bird
+dependencies:
+  - python=3.7
+  - pip
+  - numpy
+  - tqdm
+  - requests
+  - pillow
+  - pytorch
+  - flask 
+  - gunicorn 
+  - gevent
+  - torchvision 
+  - cudatoolkit=9.0 
+  - pylint
+  - autopep8
