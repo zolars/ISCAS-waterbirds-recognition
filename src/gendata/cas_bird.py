@@ -1,18 +1,16 @@
-# -*- coding: utf-8 -*
-"""This module is served as torchvision.datasets to load Cars dataset.
-This file is modified from:
-    https://github.com/vishwakftw/vision.
-"""
-
 import os
 import pickle
+from tqdm import tqdm
 
-import PIL.Image
+import numpy as np
 import torch
+import PIL.Image
+from PIL import ImageFile
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 
 class GENDATA(torch.utils.data.Dataset):
-    """Cars dataset.
+    """cas_bird dataset.
     Args:
         _root, str: Root directory of the dataset.
         _train, bool: Load train/test data.
@@ -52,12 +50,7 @@ class GENDATA(torch.utils.data.Dataset):
         if self._checkIntegrity():
             print('Files already downloaded and verified.')
         else:
-            if download:
-                url = None
-                self._download(url)
-                self._extract()
-                extract = False
-            elif extract:
+            if extract:
                 self._extract()
             else:
                 raise RuntimeError(
@@ -68,13 +61,13 @@ class GENDATA(torch.utils.data.Dataset):
         if self._train:
             self._train_data, self._train_labels = pickle.load(
                 open(os.path.join(self._root, 'processed/train.pkl'), 'rb'))
-            assert (len(self._train_data) == 8144
-                    and len(self._train_labels) == 8144)
+            assert (len(self._train_data) == 16400
+                    and len(self._train_labels) == 16400)
         else:
             self._test_data, self._test_labels = pickle.load(
                 open(os.path.join(self._root, 'processed/test.pkl'), 'rb'))
-            assert (len(self._test_data) == 8041
-                    and len(self._test_labels) == 8041)
+            assert (len(self._test_data) == 11056
+                    and len(self._test_labels) == 11056)
 
     def __getitem__(self, index):
         """
@@ -116,15 +109,55 @@ class GENDATA(torch.utils.data.Dataset):
                 and os.path.isfile(
                     os.path.join(self._root, 'processed/test.pkl')))
 
-    def _download(self, url):
-        raise NotImplementedError
-
     def _extract(self):
-        raise NotImplementedError
+        """Prepare the data for train/test split and save onto disk."""
+        print('Prepare the data for train/test split and save onto disk...')
+
+        image_path = os.path.join(self._root, 'raw/04-16/images/')
+        # Format of images.txt: <image_id> <image_name>
+        id2name = np.genfromtxt(os.path.join(self._root,
+                                             'raw/04-16/images.txt'),
+                                dtype=str)
+        id2class = np.genfromtxt(os.path.join(
+            self._root, 'raw/04-16/image_class_labels.txt'),
+                                 dtype=str)
+        # Format of train_test_split.txt: <image_id> <is_training_image>
+        id2train = np.genfromtxt(os.path.join(
+            self._root, 'raw/04-16/train_test_split.txt'),
+                                 dtype=int)
+
+        train_data = []
+        train_labels = []
+        test_data = []
+        test_labels = []
+        for id_ in tqdm(range(id2name.shape[0])):
+            image = PIL.Image.open(os.path.join(image_path, id2name[id_, 1]))
+            label = int(id2class[id_, 1]) - 1  # Label starts with 0
+            assert label >= 0 and label <= 164
+
+            # Convert gray scale image to RGB image.
+            # if image.getbands()[0] == 'L':
+            image = image.convert('RGB')
+            image_np = np.array(image)
+            image.close()
+
+            if id2train[id_, 1] == 1:
+                train_data.append(image_np)
+                train_labels.append(label)
+            else:
+                test_data.append(image_np)
+                test_labels.append(label)
+
+        pickle.dump((train_data, train_labels),
+                    open(os.path.join(self._root, 'processed/train.pkl'),
+                         'wb+'))
+        pickle.dump((test_data, test_labels),
+                    open(os.path.join(self._root, 'processed/test.pkl'),
+                         'wb+'))
 
 
 class GENDATAReLU(torch.utils.data.Dataset):
-    """Cars relu5-3 dataset.
+    """cas_bird relu5-3 dataset.
     Args:
         _root, str: Root directory of the dataset.
         _train, bool: Load train/test data.
@@ -143,22 +176,22 @@ class GENDATAReLU(torch.utils.data.Dataset):
         self._train = train
 
         if self._checkIntegrity():
-            print('Cars relu5-3 features already prepared.')
+            print('cas_bird relu5-3 features already prepared.')
         else:
-            raise RuntimeError('Cars relu5-3 Dataset not found.'
+            raise RuntimeError('cas_bird relu5-3 Dataset not found.'
                                'You need to prepare it in advance.')
 
         # Now load the picked data.
         if self._train:
-            self._train_data, self._train_labels = pickle.load(
-                open(os.path.join(self._root, 'relu5-3/train.pkl'), 'rb'))
-            assert (len(self._train_data) == 8144
-                    and len(self._train_labels) == 8144)
+            self._train_data, self._train_labels = torch.load(
+                os.path.join(self._root, 'relu5-3', 'train.pth'))
+            assert (len(self._train_data) == 16400
+                    and len(self._train_labels) == 16400)
         else:
-            self._test_data, self._test_labels = pickle.load(
-                open(os.path.join(self._root, 'relu5-3/test.pkl'), 'rb'))
-            assert (len(self._test_data) == 8041
-                    and len(self._test_labels) == 8041)
+            self._test_data, self._test_labels = torch.load(
+                os.path.join(self._root, 'relu5-3', 'test.pth'))
+            assert (len(self._test_data) == 11056
+                    and len(self._test_labels) == 11056)
 
     def __getitem__(self, index):
         """
@@ -186,6 +219,6 @@ class GENDATAReLU(torch.utils.data.Dataset):
         Returns:
             flag, bool: True if we have already processed the data.
         """
-        return (os.path.isfile(os.path.join(self._root, 'relu5-3/train.pkl'))
-                and os.path.isfile(os.path.join(self._root,
-                                                'relu5-3/test.pkl')))
+        return (os.path.isfile(os.path.join(
+            self._root, 'relu5-3', 'train.pth')) and os.path.isfile(
+                os.path.join(self._root, 'relu5-3', 'test.pth')))

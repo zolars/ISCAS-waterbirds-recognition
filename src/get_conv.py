@@ -4,31 +4,19 @@
 Used for the fc process to speed up training.
 """
 
-
 import os
 
 import torch
 import torchvision
 from tqdm import tqdm
 
-import gendata.cub200 as dataset
+import gendata.cas_bird as dataset
 
 torch.set_default_dtype(torch.float32)
 torch.set_default_tensor_type(torch.FloatTensor)
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
 torch.backends.cudnn.benchmark = True
-
-
-__all__ = ['VGGManager']
-__author__ = 'Hao Zhang'
-__copyright__ = '2018 LAMDA'
-__date__ = '2018-03-04'
-__email__ = 'zhangh0214@gmail.com'
-__license__ = 'CC BY-SA 3.0'
-__status__ = 'Development'
-__updated__ = '2018-05-19'
-__version__ = '13.1'
 
 
 class VGGManager(object):
@@ -39,7 +27,6 @@ class VGGManager(object):
         _train_loader, torch.utils.data.DataLoader: Training data.
         _test_loader, torch.utils.data.DataLoader: Testing data.
     """
-
     def __init__(self, datapath):
         """Prepare the network and data.
         Args:
@@ -71,18 +58,26 @@ class VGGManager(object):
             torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
                                              std=(0.229, 0.224, 0.225))
         ])
-        train_data = dataset.GENDATA(
-            root=self._datapath, train=True, transform=train_transforms,
-            download=False, extract=True)
-        test_data = dataset.GENDATA(
-            root=self._datapath, train=False, transform=test_transforms,
-            download=False, extract=True)
-        self._train_loader = torch.utils.data.DataLoader(
-            train_data, batch_size=1, shuffle=False, num_workers=0,
-            pin_memory=False)
-        self._test_loader = torch.utils.data.DataLoader(
-            test_data, batch_size=1, shuffle=False, num_workers=0,
-            pin_memory=False)
+        train_data = dataset.GENDATA(root=self._datapath,
+                                     train=True,
+                                     transform=train_transforms,
+                                     download=False,
+                                     extract=True)
+        test_data = dataset.GENDATA(root=self._datapath,
+                                    train=False,
+                                    transform=test_transforms,
+                                    download=False,
+                                    extract=True)
+        self._train_loader = torch.utils.data.DataLoader(train_data,
+                                                         batch_size=1,
+                                                         shuffle=False,
+                                                         num_workers=0,
+                                                         pin_memory=False)
+        self._test_loader = torch.utils.data.DataLoader(test_data,
+                                                        batch_size=1,
+                                                        shuffle=False,
+                                                        num_workers=0,
+                                                        pin_memory=False)
 
     def getFeature(self, phase, size):
         """Get relu5-3 features and save it onto disk.
@@ -96,13 +91,13 @@ class VGGManager(object):
         with torch.no_grad():
             all_data = []  # list<torch.Tensor>
             all_label = []  # list<int>
-            data_loader = (self._train_loader if phase == 'train'
-                           else self._test_loader)
+            data_loader = (self._train_loader
+                           if phase == 'train' else self._test_loader)
             for instance, label in tqdm(data_loader):
                 # Data.
                 instance = instance.cuda()
                 assert instance.size() == (1, 3, 448, 448)
-                assert label.size() == (1,)
+                assert label.size() == (1, )
 
                 # Forward pass
                 feature = self._net(instance)
@@ -111,8 +106,9 @@ class VGGManager(object):
                 all_data.append(torch.squeeze(feature, dim=0).cpu())
                 all_label.append(label.item())
             assert len(all_data) == size and len(all_label) == size
-            torch.save((all_data, all_label), os.path.join(
-                self._datapath, 'relu5-3', '%s.pth' % phase))
+            torch.save((all_data, all_label),
+                       os.path.join(self._datapath, 'relu5-3',
+                                    '%s.pth' % phase))
 
 
 def main():
@@ -121,14 +117,14 @@ def main():
     paths = {
         'cub200': os.path.join(project_root, 'data', 'cub200'),
         'aircraft': os.path.join(project_root, 'data', 'aircraft'),
-        'cars': os.path.join(project_root, 'data', 'cars'),
+        'cas_bird': os.path.join(project_root, 'data', 'cas_bird'),
     }
     for d in paths:
         assert os.path.isdir(paths[d])
 
-    manager = VGGManager(paths['cub200'])
-    manager.getFeature('train', 5994)
-    manager.getFeature('test', 5794)
+    manager = VGGManager(paths['cas_bird'])
+    manager.getFeature('train', 16400)
+    manager.getFeature('test', 11056)
 
 
 if __name__ == '__main__':

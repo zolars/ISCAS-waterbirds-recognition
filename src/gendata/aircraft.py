@@ -12,16 +12,6 @@ import PIL.Image
 import torch
 
 
-__all__ = ['GENDATA', 'GENDATAReLU']
-__author__ = 'Xin Yifei'
-__copyright__ = '2018 LAMDA'
-__date__ = '2019-06-17'
-__license__ = 'CC BY-SA 3.0'
-__status__ = 'Development'
-__updated__ = '2019-06-17'
-__version__ = '12.0'
-
-
 class GENDATA(torch.utils.data.Dataset):
     """GENDATA dataset.
     Args:
@@ -36,9 +26,13 @@ class GENDATA(torch.utils.data.Dataset):
         _test_data, list of np.ndarray.
         _test_labels, list of int.
     """
-
-    def __init__(self, root, train=True, transform=None, target_transform=None,
-                 download=False, extract=False):
+    def __init__(self,
+                 root,
+                 train=True,
+                 transform=None,
+                 target_transform=None,
+                 download=False,
+                 extract=False):
         """Load the dataset.
         Args
             root, str: Root directory of the dataset.
@@ -68,17 +62,18 @@ class GENDATA(torch.utils.data.Dataset):
                 self._extract()
             else:
                 raise RuntimeError(
-                    'Dataset not found. You can use download=True to download it.')
+                    'Dataset not found. You can use download=True to download it.'
+                )
 
         # Now load the picked data.
         if self._train:
-            self._train_data, self._train_labels = pickle.load(open(
-                os.path.join(self._root, 'processed/train.pkl'), 'rb'))
+            self._train_data, self._train_labels = pickle.load(
+                open(os.path.join(self._root, 'processed/train.pkl'), 'rb'))
             assert (len(self._train_data) == 3334
                     and len(self._train_labels) == 3334)
         else:
-            self._test_data, self._test_labels = pickle.load(open(
-                os.path.join(self._root, 'processed/test.pkl'), 'rb'))
+            self._test_data, self._test_labels = pickle.load(
+                open(os.path.join(self._root, 'processed/test.pkl'), 'rb'))
             assert (len(self._test_data) == 3333
                     and len(self._test_labels) == 3333)
 
@@ -118,23 +113,25 @@ class GENDATA(torch.utils.data.Dataset):
         Returns:
             flag, bool: True if we have already processed the data.
         """
-        return (
-            os.path.isfile(os.path.join(self._root, 'processed/train.pkl'))
-            and os.path.isfile(os.path.join(self._root, 'processed/test.pkl')))
+        return (os.path.isfile(os.path.join(self._root, 'processed/train.pkl'))
+                and os.path.isfile(
+                    os.path.join(self._root, 'processed/test.pkl')))
 
     def _download(self, url):
         raise NotImplementedError
 
     def _extract(self):
         """Prepare the data for train/test split and save onto disk."""
-        image_path = os.path.join(
-            self._root, 'raw/fgvc-aircraft-2013b/images/')
+        image_path = os.path.join(self._root,
+                                  'raw/fgvc-aircraft-2013b/images/')
         # Format of images.txt: <image_id> <image_name>
         id2name = np.genfromtxt(os.path.join(
-            self._root, 'raw/fgvc-aircraft-2013b/images.txt'), dtype=str)
+            self._root, 'raw/fgvc-aircraft-2013b/images.txt'),
+                                dtype=str)
         # Format of train_test_split.txt: <image_id> <is_training_image>
         id2train = np.genfromtxt(os.path.join(
-            self._root, 'raw/fgvc-aircraft-2013b/train_test_split.txt'), dtype=int)
+            self._root, 'raw/fgvc-aircraft-2013b/train_test_split.txt'),
+                                 dtype=int)
 
         train_data = []
         train_labels = []
@@ -158,7 +155,8 @@ class GENDATA(torch.utils.data.Dataset):
                 test_labels.append(label)
 
         pickle.dump((train_data, train_labels),
-                    open(os.path.join(self._root, 'processed/train.pkl'), 'wb'))
+                    open(os.path.join(self._root, 'processed/train.pkl'),
+                         'wb'))
         pickle.dump((test_data, test_labels),
                     open(os.path.join(self._root, 'processed/test.pkl'), 'wb'))
 
@@ -173,7 +171,6 @@ class GENDATAReLU(torch.utils.data.Dataset):
         _test_data, list<torch.Tensor>.
         _test_labels, list<int>.
     """
-
     def __init__(self, root, train=True):
         """Load the dataset.
         Args
@@ -191,13 +188,13 @@ class GENDATAReLU(torch.utils.data.Dataset):
 
         # Now load the picked data.
         if self._train:
-            self._train_data, self._train_labels = torch.load(open(
-                os.path.join(self._root, 'relu5-3/train.pth'), 'rb'))
+            self._train_data, self._train_labels = torch.load(
+                open(os.path.join(self._root, 'relu5-3/train.pth'), 'rb'))
             assert (len(self._train_data) == 3334
                     and len(self._train_labels) == 3334)
         else:
-            self._test_data, self._test_labels = torch.load(open(
-                os.path.join(self._root, 'relu5-3/test.pth'), 'rb'))
+            self._test_data, self._test_labels = torch.load(
+                open(os.path.join(self._root, 'relu5-3/test.pth'), 'rb'))
             assert (len(self._test_data) == 3333
                     and len(self._test_labels) == 3333)
 
@@ -227,6 +224,6 @@ class GENDATAReLU(torch.utils.data.Dataset):
         Returns:
             flag, bool: True if we have already processed the data.
         """
-        return (
-            os.path.isfile(os.path.join(self._root, 'relu5-3', 'train.pth'))
-            and os.path.isfile(os.path.join(self._root, 'relu5-3', 'test.pth')))
+        return (os.path.isfile(os.path.join(
+            self._root, 'relu5-3', 'train.pth')) and os.path.isfile(
+                os.path.join(self._root, 'relu5-3', 'test.pth')))

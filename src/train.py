@@ -1,9 +1,6 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Fine-tune all layers for bilinear CNN.
-This is the second step.
-$ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/bcnn_train_fc.log&
-$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 30 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
+"""
+$ nohup python ./src/train.py --base_lr 1e0 --batch_size 32 --epochs 80 --weight_decay 1e-5 > ./log/bcnn_train_fc.log&
+$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 16 --epochs 30 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
 """
 
 import os
@@ -13,7 +10,7 @@ import time
 import torch
 import torchvision
 
-import gendata.cub200 as dataset
+import gendata.cas_bird as dataset
 import model as model
 
 torch.set_default_dtype(torch.float32)
@@ -21,18 +18,6 @@ torch.set_default_tensor_type(torch.FloatTensor)
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
 torch.backends.cudnn.benchmark = True
-
-
-__all__ = ['BCNNManager']
-__author__ = 'Hao Zhang'
-__copyright__ = '2018 LAMDA'
-__date__ = '2018-01-11'
-__email__ = 'zhangh0214@gmail.com'
-__license__ = 'CC BY-SA 3.0'
-__status__ = 'Development'
-__updated__ = '2018-05-19'
-__version__ = '13.1'
-
 
 class BCNNManager(object):
     """Manager class to train bilinear CNN.
@@ -57,7 +42,8 @@ class BCNNManager(object):
         print('Prepare the network and data.')
 
         # GPUs
-        os.environ["CUDA_VISIBLE_DEVICES"] = "1,2,3"
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3"
+        os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
         # Configurations.
         self._options = options
@@ -66,16 +52,17 @@ class BCNNManager(object):
 
         # Network.
         if self._paths['pretrained'] is not None:
+            print('Running ALL...')
             self._all_fc_key = "all"
             self._net = torch.nn.DataParallel(
-                model.BCNN(num_classes=200, is_all=True)).cuda()
+                model.BCNN(num_classes=164, is_all=True)).cuda()
             self._net.load_state_dict(torch.load(self._paths['pretrained']),
                                       strict=False)
-            print("donedonedone_all")
         else:
+            print('Running FC...')
             self._all_fc_key = "fc"
             self._net = torch.nn.DataParallel(
-                model.BCNN(num_classes=200, is_all=False)).cuda()
+                model.BCNN(num_classes=164, is_all=False)).cuda()
         print(self._net)
         self._criterion = torch.nn.CrossEntropyLoss().cuda()
 
@@ -121,11 +108,11 @@ class BCNNManager(object):
                 root=self._datapath, train=False)
         self._train_loader = torch.utils.data.DataLoader(
             train_data, batch_size=self._options['batch_size'], shuffle=True,
-            num_workers=4, pin_memory=True)
+            num_workers=3, pin_memory=True)
         self._test_loader = torch.utils.data.DataLoader(
             test_data,
-            batch_size=(64 if self._all_fc_key is 'fc' else 64),
-            shuffle=True, num_workers=4, pin_memory=True)
+            batch_size=(64 if self._all_fc_key is 'fc' else 32),
+            shuffle=True, num_workers=3, pin_memory=True)
 
     def train(self):
         """Train the network."""
@@ -241,10 +228,14 @@ def main():
         'weight_decay': args.weight_decay,
     }
     paths = {
-        'cub200': os.path.join(project_root, 'data', 'cub200'),
-        # 'cars': os.path.join(project_root, 'data', 'cars'),
-        'aircraft': os.path.join(project_root, 'data', 'aircraft'),
-        'model': os.path.join(project_root, 'model'),
+        'cub200':
+        os.path.join(project_root, 'data', 'cub200'),
+        'cas_bird':
+        os.path.join(project_root, 'data', 'cas_bird'),
+        'aircraft':
+        os.path.join(project_root, 'data', 'aircraft'),
+        'model':
+        os.path.join(project_root, 'model'),
         'pretrained': (os.path.join(project_root, 'model', args.pretrained)
                        if args.pretrained else None),
     }
@@ -254,10 +245,9 @@ def main():
         else:
             assert os.path.isdir(paths[d])
 
-    manager = BCNNManager(options, paths['cub200'], paths)
+    manager = BCNNManager(options, paths['cas_bird'], paths)
     manager.train()
 
 
 if __name__ == '__main__':
-
     main()

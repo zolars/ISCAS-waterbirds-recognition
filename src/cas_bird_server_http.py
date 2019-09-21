@@ -35,15 +35,14 @@ class BCNN(torch.nn.Module):
     The B-CNN model is illustrated as follows.
     conv1^2 (64) -> pool1 -> conv2^2 (128) -> pool2 -> conv3^3 (256) -> pool3
     -> conv4^3 (512) -> pool4 -> conv5^3 (512) -> bilinear pooling
-    -> sqrt-normalize -> L2-normalize -> fc (200).
+    -> sqrt-normalize -> L2-normalize -> fc (164).
     The network accepts a 3*448*448 input, and the pool5 activation has shape
     512*28*28 since we down-sample 5 times.
 
     Attributes:
         features, torch.nn.Module: Convolution and pooling layers.
-        fc, torch.nn.Module: 200.
+        fc, torch.nn.Module: 164.
     """
-
     def __init__(self):
         """Declare all needed layers."""
 
@@ -94,7 +93,6 @@ class BCNNManager(object):
         _train_loader: Training data.
         _test_loader: Testing data.
     """
-
     def __init__(self, path):
         """Prepare the network, criterion, solver, and data.
 
@@ -115,12 +113,12 @@ class BCNNManager(object):
             torchvision.transforms.Resize(size=448),
             torchvision.transforms.CenterCrop(size=448),
             torchvision.transforms.ToTensor(),
-            torchvision.transforms.Normalize(
-                mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+            torchvision.transforms.Normalize(mean=(0.485, 0.456, 0.406),
+                                             std=(0.229, 0.224, 0.225))
         ])
 
-        self.classes = open(
-            './resource/classes.txt', encoding='UTF-8').readlines()
+        self.classes = open('./resource/classes.txt',
+                            encoding='UTF-8').readlines()
 
     def test(self, image):
 
@@ -142,12 +140,11 @@ class BCNNManager(object):
         result = []
         for i in range(5):
             typeStr = self.classes[int(rstArg[-i - 1])]
-            result.append(
-                {
-                    "birdNum": typeStr.split()[0],
-                    "birdNameCN": typeStr.split()[1],
-                    "probability": '%.1f' % (rstPoss[-i - 1] * 100)
-                })
+            result.append({
+                "birdNum": typeStr.split()[0],
+                "birdNameCN": typeStr.split()[1],
+                "probability": '%.1f' % (rstPoss[-i - 1] * 100)
+            })
 
         return result
 
@@ -158,7 +155,6 @@ path = {
     'imgfile': os.path.join(project_root, '1.jpg'),
 }
 model = BCNNManager(path)
-
 
 print("\n------------------------Web Start------------------------\n")
 
@@ -172,6 +168,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 def allowed_file(filename):
     return '.' in filename and \
         filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
+
 
 # 处理请求
 @app.route('/', methods=['POST'])

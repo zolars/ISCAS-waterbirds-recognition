@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-"""Mean field B-CNN model."""
-
-
 import torch
 import torchvision
 
@@ -10,17 +6,6 @@ torch.set_default_tensor_type(torch.FloatTensor)
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
 torch.backends.cudnn.benckmark = True
-
-
-__all__ = ['BCNN']
-__author__ = 'Hao Zhang'
-__copyright__ = '2018 LAMDA'
-__date__ = '2018-01-09'
-__email__ = 'zhangh0214@gmail.com'
-__license__ = 'CC BY-SA 3.0'
-__status__ = 'Development'
-__updated__ = '2018-05-21'
-__version__ = '13.7'
 
 
 class BCNN(torch.nn.Module):
@@ -40,7 +25,6 @@ class BCNN(torch.nn.Module):
         mf_pool, torch.nn.Module.
         fc, torch.nn.Module.
     """
-
     def __init__(self, num_classes, is_all):
         """Declare all needed layers.
         Args:
@@ -53,15 +37,16 @@ class BCNN(torch.nn.Module):
         if self._is_all:
             # Convolution and pooling layers of VGG-16.
             self.features = torchvision.models.vgg16(pretrained=True).features
-            self.features = torch.nn.Sequential(*list(self.features.children())
-                                                [:-2])  # Remove pool5.
+            self.features = torch.nn.Sequential(
+                *list(self.features.children())[:-2])  # Remove pool5.
 
         # Mean filed pooling layer.
         self.relu5_3 = torch.nn.ReLU(inplace=False)
 
         # Classification layer.
-        self.fc = torch.nn.Linear(
-            in_features=512 * 512, out_features=num_classes, bias=True)
+        self.fc = torch.nn.Linear(in_features=512 * 512,
+                                  out_features=num_classes,
+                                  bias=True)
 
         if not self._is_all:
             self.apply(BCNN._initParameter)
@@ -75,7 +60,9 @@ class BCNN(torch.nn.Module):
             torch.nn.init.constant_(module.weight, val=1.0)
             torch.nn.init.constant_(module.bias, val=0.0)
         elif isinstance(module, torch.nn.Conv2d):
-            torch.nn.init.kaiming_normal_(module.weight, a=0, mode='fan_out',
+            torch.nn.init.kaiming_normal_(module.weight,
+                                          a=0,
+                                          mode='fan_out',
                                           nonlinearity='relu')
             if module.bias is not None:
                 torch.nn.init.constant_(module.bias, val=0.0)
@@ -88,7 +75,7 @@ class BCNN(torch.nn.Module):
         Args:
             X, torch.Tensor (N*3*448*448).
         Returns:
-            score, torch.Tensor (N*200).
+            score, torch.Tensor (N*M).
         """
         # Input.
         N = X.size()[0]
