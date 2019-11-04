@@ -10,7 +10,7 @@ import torch
 import torchvision
 from tqdm import tqdm
 
-import gendata.cas_bird as dataset
+import gendata.cub200 as dataset
 
 torch.set_default_dtype(torch.float32)
 torch.set_default_tensor_type(torch.FloatTensor)
@@ -122,9 +122,9 @@ def main():
     for d in paths:
         assert os.path.isdir(paths[d])
 
-    manager = VGGManager(paths['cas_bird'])
-    manager.getFeature('train', 16400)
-    manager.getFeature('test', 11056)
+    manager = VGGManager(paths['cub200'])
+    manager.getFeature('train', 5994)
+    manager.getFeature('test', 5794)
 
 
 if __name__ == '__main__':

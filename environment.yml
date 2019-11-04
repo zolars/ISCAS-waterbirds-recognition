@@ -14,3 +14,5 @@ dependencies:
   - cudatoolkit=9.0 
   - pylint
   - autopep8
+  - bs4
+  - execjs

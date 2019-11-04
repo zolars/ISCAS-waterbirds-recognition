@@ -1,6 +1,6 @@
 """
 $ nohup python ./src/train.py --base_lr 1e0 --batch_size 32 --epochs 80 --weight_decay 1e-5 > ./log/bcnn_train_fc.log&
-$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 16 --epochs 30 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
+$ nohup python ./src/train.py --base_lr 1e-2 --batch_size 32 --epochs 30 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/bcnn_train_all.log&
 """
 
 import os
@@ -108,11 +108,11 @@ class BCNNManager(object):
                 root=self._datapath, train=False)
         self._train_loader = torch.utils.data.DataLoader(
             train_data, batch_size=self._options['batch_size'], shuffle=True,
-            num_workers=3, pin_memory=True)
+            num_workers=4, pin_memory=True)
         self._test_loader = torch.utils.data.DataLoader(
             test_data,
             batch_size=(64 if self._all_fc_key is 'fc' else 32),
-            shuffle=True, num_workers=3, pin_memory=True)
+            shuffle=True, num_workers=4, pin_memory=True)
 
     def train(self):
         """Train the network."""

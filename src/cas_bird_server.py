@@ -25,6 +25,8 @@ import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 
+from src.birddata import bd
+
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
 
@@ -193,21 +195,29 @@ def main_page():
                     <!doctype html>
                     <title>Success!</title>
                     <h1>Success!</h1>
+                    <a href = "/upload"> Continue to upload... </a>      
                     <p>The result is:</p>
                     '''
             count = 0
             for result in results:
                 count += 1
+
+                birdNameCN = result.get("birdNameCN")
+                birdNameEN = bd[result.get("birdNum")]['英文名']
+                birdpicURL = bd[result.get("birdNum")]['pic']
+
+                p = result.get("probability")
+
                 html += '<p>No.' + str(count) + \
-                    ' : ' + result.get("birdNameCN") + '\t\tProbability : ' + \
-                    result.get("probability") + '</p>'
-            html += '<a href = "/upload"> Continue to upload... </a>'
+                    ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
             return html
 
     return '''
     <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
+    <title>ISCAS Waterbirds Recognition Service</title>
+    <img src="https://raw.githubusercontent.com/zolars/pic-bed/master//20191030165058.png">
+    <h2>Welcome to ISCAS Waterbirds Recognition Service</h2>
+    <h3>Upload new Image</h3>
     <form action="" method=post enctype=multipart/form-data>
     <p><input type=file name=file>
         <input type=submit value=Upload>
