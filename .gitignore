@@ -3,6 +3,8 @@ data
 archive
 model
 log
+package
 __pycache__
+
 *.pyc
 *.pth
