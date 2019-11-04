@@ -25,7 +25,7 @@ import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 
-from src.birddata import bd
+from birddata import bd
 
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
@@ -228,10 +228,6 @@ def main_page():
     '''
 
 
-app.run(host='0.0.0.0',
-        port=8080,
-        debug=False,
-        ssl_context=('./ssl/birdid.iscas.ac.cn.pem',
-                     './ssl/birdid.iscas.ac.cn.key'))
+app.run(host='0.0.0.0', port=5000, debug=False)
 
 print("\n------------------------Web End------------------------\n")
