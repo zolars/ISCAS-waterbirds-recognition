@@ -7,9 +7,9 @@ Usage:
     conda activate bird
     conda install flask pytorch torchvision cudatoolkit=9.0 -c pytorch
     
-    nohup gunicorn -b 127.0.0.1:7000 -t 3600 src.cas_bird_server_http:app > ./log/server_http.log&
+    nohup gunicorn -b 127.0.0.1:8000 src.cas_bird_server:app -k gevent --worker-connections 10 > ./log/server.log&
 
-    http://birdid.iscas.ac.cn:5000/upload/
+    https://birdid.iscas.ac.cn:8080/upload/
 """
 
 import os
@@ -24,6 +24,8 @@ import torchvision
 import torch.nn.functional as F
 from PIL import Image
 import numpy as np
+
+from src.birddata import bd
 
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
@@ -43,6 +45,7 @@ class BCNN(torch.nn.Module):
         features, torch.nn.Module: Convolution and pooling layers.
         fc, torch.nn.Module: 164.
     """
+
     def __init__(self):
         """Declare all needed layers."""
 
@@ -62,7 +65,7 @@ class BCNN(torch.nn.Module):
             X, torch.autograd.Variable of shape N*3*448*448.
 
         Returns:
-            Score, torch.autograd.Variable of shape N*200.
+            Score, torch.autograd.Variable of shape N*164.
         """
 
         N = X.size()[0]
@@ -93,6 +96,7 @@ class BCNNManager(object):
         _train_loader: Training data.
         _test_loader: Testing data.
     """
+
     def __init__(self, path):
         """Prepare the network, criterion, solver, and data.
 
@@ -193,21 +197,30 @@ def main_page():
                     <!doctype html>
                     <title>Success!</title>
                     <h1>Success!</h1>
+                    <a href = "/upload"> Continue to upload... </a>      
                     <p>The result is:</p>
                     '''
             count = 0
             for result in results:
                 count += 1
+
+                birdNameCN = result.get("birdNameCN")
+                birdNameEN = bd[result.get("birdNum")]['英文名']
+                birdpicURL = bd[result.get("birdNum")]['pic']
+
+                p = result.get("probability")
+
                 html += '<p>No.' + str(count) + \
-                    ' : ' + result.get("birdNameCN") + '\t\tProbability : ' + \
-                    result.get("probability") + '</p>'
-            html += '<a href = "/upload"> Continue to upload... </a>'
+                    ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + \
+                        '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
             return html
 
     return '''
     <!doctype html>
-    <title>Upload new File</title>
-    <h1>Upload new File</h1>
+    <title>ISCAS Waterbirds Recognition Service</title>
+    <img src="https://raw.githubusercontent.com/zolars/pic-bed/master//20191030165058.png">
+    <h2>Welcome to ISCAS Waterbirds Recognition Service</h2>
+    <h3>Upload new Image</h3>
     <form action="" method=post enctype=multipart/form-data>
     <p><input type=file name=file>
         <input type=submit value=Upload>

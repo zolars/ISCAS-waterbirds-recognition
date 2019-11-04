@@ -45,6 +45,7 @@ class BCNN(torch.nn.Module):
         features, torch.nn.Module: Convolution and pooling layers.
         fc, torch.nn.Module: 164.
     """
+
     def __init__(self):
         """Declare all needed layers."""
 
@@ -95,6 +96,7 @@ class BCNNManager(object):
         _train_loader: Training data.
         _test_loader: Testing data.
     """
+
     def __init__(self, path):
         """Prepare the network, criterion, solver, and data.
 
@@ -209,7 +211,8 @@ def main_page():
                 p = result.get("probability")
 
                 html += '<p>No.' + str(count) + \
-                    ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
+                    ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + \
+                        '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
             return html
 
     return '''
