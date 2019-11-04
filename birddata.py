@@ -1,4 +1,22 @@
 bd = {
+   '0': {
+      'pic':
+        'https://www.interserver.net/tips/wp-content/uploads/2016/10/404error.jpeg',
+      '中文名': '未发现水鸟',
+      '拉丁文名': 'Pic without waterbirds',
+      '英文名': 'Pic without waterbirds',
+      '分类': 'No Data',
+      'IUCN 红色名录等级': 'No Data',
+      '描述': 'No Data',
+      '虹膜': 'No Data',
+      '嘴': 'No Data',
+      '脚': 'No Data',
+      '叫声': 'No Data',
+      '分布范围': 'No Data',
+      '分布状况': 'No Data',
+      '习性': 'No Data',
+      '俗名': 'No Data'
+    },
     '64': {
       'pic': 'https://www.birder.cn/upload/natural/a/p00064.jpg',
       '中文名': '栗树鸭',

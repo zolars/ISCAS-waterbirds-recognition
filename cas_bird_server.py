@@ -15,6 +15,7 @@ Usage:
 import os
 import time
 import sys
+import shutil
 from flask import Flask, request, redirect, url_for
 import urllib.parse
 import json
@@ -26,7 +27,7 @@ from PIL import Image
 import numpy as np
 
 from birddata import bd
-from package.yolov3.detect_bird import detect
+from package.yolov3.detect import detect
 
 torch.manual_seed(0)
 torch.cuda.manual_seed_all(0)
@@ -175,11 +176,35 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1] in ALLOWED_EXTENSIONS
 
 
+def return_img_stream(img_path):
+    import base64
+    img_stream = ''
+    with open(img_path, 'rb') as img_f:
+        img_stream = img_f.read()
+        img_stream = base64.b64encode(img_stream)
+    return img_stream
+
+
 # 处理请求
 @app.route('/', methods=['POST'])
 def upload_file():
     f = request.files['file']
-    result = model.test(Image.open(f))
+    img = Image.open(f).convert("RGB")
+    os.makedirs("./image/", exist_ok=True)
+    filename = file.filename.split(".")[0]
+    img.save("./image/" + filename + ".jpg")
+    if "bird" not in detect():
+        return [{"birdNum": "0", "birdNameCN": "未发现水鸟", "probability": "0"}]*5
+
+    img = Image.open("./static/" + filename + ".png")
+
+    try:
+        shutil.rmtree("./image/")
+        shutil.rmtree("./static/")
+    except OSError as e:
+        print(e)
+
+    result = model.test(img)
     result = json.dumps(result, ensure_ascii=False).encode('utf-8')
     return result, 200, {"ContentType": "application/json"}
 
@@ -188,17 +213,47 @@ def upload_file():
 @app.route('/upload/', methods=['GET', 'POST'])
 def main_page():
     if request.method == 'POST':
+
+        try:
+            shutil.rmtree("./image/")
+            shutil.rmtree("./static/")
+        except OSError as e:
+            print(e)
+
         file = request.files['file']
         if file and allowed_file(file.filename):
             # filename = secure_filename(file.filename)
             # file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            results = model.test(Image.open(file))
+
+            img = Image.open(file).convert("RGB")
+            os.makedirs("./image/", exist_ok=True)
+            os.makedirs("./static/", exist_ok=True)
+            filename = file.filename.split(".")[0]
+            img.save("./image/" + filename + ".jpg")
+            if "bird" not in detect():
+                results = [{"birdNum": "0",
+                            "birdNameCN": "未发现水鸟", "probability": "0"}] * 5
+                html = '''
+                    <!doctype html>
+                    <title>Error!</title>
+                    <h1>Waterbird doesn't exist in the picture!</h1>
+                    <a href = "/upload"> Continue to upload... </a>  
+                '''
+                html += "<img src='/static/" + filename + ".png'>"
+                return html
+
+            results = model.test(img)
 
             html = '''
                     <!doctype html>
                     <title>Success!</title>
                     <h1>Success!</h1>
-                    <a href = "/upload"> Continue to upload... </a>      
+                    <a href = "/upload"> Continue to upload... </a>   
+                    <p>Your input:</p>
+                    '''
+            html += "<img src='/static/" + filename + ".png'>"
+
+            html += '''
                     <p>The result is:</p>
                     '''
             count = 0
