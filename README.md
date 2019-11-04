@@ -1,19 +1,19 @@
-### 测试命令 (如果使用 CMD 要先执行 `chcp 65001` 调整utf-8显示)
+### Instructions (With Windows CMD, run `chcp 65001` first to adjust the UTF-8 display)
 
 `curl -F "file=@./1.png" https://birdid.iscas.ac.cn:8080/`
 `curl -F "file=@./1.png" http://birdid.iscas.ac.cn:5000/`
 
-### 使用方式
+### Quick start
 
-向 https://birdid.iscas.ac.cn:8080/ 或者 http://birdid.iscas.ac.cn:5000/ 发送一个包含图片文件的 POST 指令.
+Send a POST request with a photo to https://birdid.iscas.ac.cn:8080/ or http://birdid.iscas.ac.cn:5000/.
 
-服务器返回一个 json 文件, 格式为：[{"birdNum" :"int","birdNameCN":"str", "probability":"float"}, ...]
+The server will response a json file whose form is: [{"birdNum" :"int","birdNameCN":"str", "probability":"float"}, ...]
 
-### 网页示例
+### Web examples
 https://birdid.iscas.ac.cn:8080/upload
 http://birdid.iscas.ac.cn:5000/upload
 
-### 返回示例
+### Response examples
 
 ```json
 [
@@ -59,7 +59,7 @@ kill -9 xxxxxx
 
 ### BirdSpider
 
-一个可以抓取 `./resource/target.txt` 中拉丁文名的鸟种的信息. 信息来源自 http://www.birder.cn
+A spider for getting `./resource/target.txt`. Information comes from http://www.birder.cn
 
 ---
 
