@@ -1,19 +1,11 @@
-### Instructions (With Windows CMD, run `chcp 65001` first to adjust the UTF-8 display)
-
-`curl -F "file=@./1.png" https://birdid.iscas.ac.cn:8080/`
-`curl -F "file=@./1.png" http://birdid.iscas.ac.cn:5000/`
-
-### Quick start
+# Quick start
+Visit https://birdid.iscas.ac.cn:8080/upload or http://birdid.iscas.ac.cn:5000/upload.
 
 Send a POST request with a photo to https://birdid.iscas.ac.cn:8080/ or http://birdid.iscas.ac.cn:5000/.
 
 The server will response a json file whose form is: [{"birdNum" :"int","birdNameCN":"str", "probability":"float"}, ...]
 
-### Web examples
-https://birdid.iscas.ac.cn:8080/upload
-http://birdid.iscas.ac.cn:5000/upload
-
-### Response examples
+# Response examples
 
 ```json
 [
@@ -26,7 +18,7 @@ http://birdid.iscas.ac.cn:5000/upload
 ```
 ---
 
-### Code deployment
+# Code deployment
 
 ```
 conda env create -f environment.yml
@@ -38,7 +30,7 @@ or
 $ conda env update -f environment.yml
 ```
 
-### Start & Close
+# Start & Close
 
 Start
 ```
@@ -63,7 +55,7 @@ A spider for getting `./resource/target.txt`. Information comes from http://www.
 
 ---
 
-### Bilinear-CNN Training
+# Bilinear-CNN Training
 
 Mean field approximation of Bilinear CNN for Fine-grained recognition
 * Step 1. Fine-tune the fc layer only.
