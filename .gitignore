@@ -4,6 +4,7 @@ archive
 model
 log
 package
+static
 __pycache__
 
 *.pyc
