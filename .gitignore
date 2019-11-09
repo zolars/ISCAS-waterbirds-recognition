@@ -5,6 +5,7 @@ model
 log
 package
 static
+test
 __pycache__
 
 *.pyc

@@ -188,25 +188,37 @@ def return_img_stream(img_path):
 # 处理请求
 @app.route('/', methods=['POST'])
 def upload_file():
-    f = request.files['file']
-    img = Image.open(f).convert("RGB")
-    os.makedirs("./image/", exist_ok=True)
-    filename = file.filename.split(".")[0]
-    img.save("./image/" + filename + ".jpg")
-    if "bird" not in detect():
-        return [{"birdNum": "0", "birdNameCN": "未发现水鸟", "probability": "0"}]*5
-
-    img = Image.open("./static/" + filename + ".png")
-
     try:
         shutil.rmtree("./image/")
         shutil.rmtree("./static/")
     except OSError as e:
         print(e)
 
-    result = model.test(img)
-    result = json.dumps(result, ensure_ascii=False).encode('utf-8')
-    return result, 200, {"ContentType": "application/json"}
+    file = request.files['file']
+    img = Image.open(file).convert("RGB")
+    os.makedirs("./image/", exist_ok=True)
+    filename = file.filename.split(".")[0]
+    img.save("./image/" + filename + ".jpg")
+    detected = detect()
+
+    # No birds in pic
+    if "bird" not in detected:
+        results = json.dumps(
+            {"birdExists": False, "detected": detected}, ensure_ascii=False).encode('utf-8')
+        return results, 200, {"ContentType": "application/json"}
+
+    # Birds in pic
+    results = []
+    i = 0
+    for coordinate in detected["bird"]:
+        i += 1
+        img = Image.open("./static/" + filename + "/bird_" + str(i) + ".png")
+        result = model.test(img)
+        results.append([coordinate, result])
+
+    results = json.dumps(
+        {"birdExists": True, "detected": results}, ensure_ascii=False).encode('utf-8')
+    return results, 200, {"ContentType": "application/json"}
 
 
 @app.route('/upload', methods=['GET', 'POST'])
@@ -231,8 +243,6 @@ def main_page():
             filename = file.filename.split(".")[0]
             img.save("./image/" + filename + ".jpg")
             if "bird" not in detect():
-                results = [{"birdNum": "0",
-                            "birdNameCN": "未发现水鸟", "probability": "0"}] * 5
                 html = '''
                     <!doctype html>
                     <title>Error!</title>

@@ -16,6 +16,12 @@ The server will response a json file whose form is: [{"birdNum" :"int","birdName
     {"birdNum": "157", "birdNameCN": "朱鹮", "probability": "0.1"}
 ]
 ```
+
+### Request (Run `chcp 65001` first if you want to use CMD in order to adjust utf-8 display)
+
+`curl -F "file=@./1.jpg" https://birdid.iscas.ac.cn:8080/`
+`curl -F "file=@./1.jpg" http://birdid.iscas.ac.cn:5000/`
+
 ---
 
 # Code deployment
