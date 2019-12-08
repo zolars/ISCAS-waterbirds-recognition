@@ -8,19 +8,89 @@ The server will response a json file whose form is: [{"birdNum" :"int","birdName
 # Response examples
 
 ```json
-[
-    {"birdNum": "77", "birdNameCN": "疣鼻天鹅", "probability": "98.1"}, 
-    {"birdNum": "79", "birdNameCN": "大天鹅", "probability": "0.9"}, 
-    {"birdNum": "78", "birdNameCN": "小天鹅", "probability": "0.2"}, 
-    {"birdNum": "187", "birdNameCN": "斑嘴鹈鹕", "probability": "0.1"}, 
-    {"birdNum": "157", "birdNameCN": "朱鹮", "probability": "0.1"}
-]
+{
+    "birdExists": true,
+    "detected": [
+        [
+            [
+                88.44642639160156,
+                108.05941009521484,
+                314.1124267578125,
+                261.4700622558594
+            ],
+            [
+                {
+                    "birdNum": "79",
+                    "birdNameCN": "大天鹅",
+                    "probability": "72.4"
+                },
+                {
+                    "birdNum": "77",
+                    "birdNameCN": "疣鼻天鹅",
+                    "probability": "5.4"
+                },
+                {
+                    "birdNum": "179",
+                    "birdNameCN": "大白鹭",
+                    "probability": "5.2"
+                },
+                {
+                    "birdNum": "293",
+                    "birdNameCN": "丹顶鹤",
+                    "probability": "3.5"
+                },
+                {
+                    "birdNum": "78",
+                    "birdNameCN": "小天鹅",
+                    "probability": "2.1"
+                }
+            ]
+        ],
+        [
+            [
+                326.9642333984375,
+                112.74176788330078,
+                544.1141357421875,
+                261.4792785644531
+            ],
+            [
+                {
+                    "birdNum": "79",
+                    "birdNameCN": "大天鹅",
+                    "probability": "75.9"
+                },
+                {
+                    "birdNum": "77",
+                    "birdNameCN": "疣鼻天鹅",
+                    "probability": "4.2"
+                },
+                {
+                    "birdNum": "157",
+                    "birdNameCN": "朱鹮",
+                    "probability": "2.9"
+                },
+                {
+                    "birdNum": "293",
+                    "birdNameCN": "丹顶鹤",
+                    "probability": "2.0"
+                },
+                {
+                    "birdNum": "78",
+                    "birdNameCN": "小天鹅",
+                    "probability": "1.7"
+                }
+            ]
+        ]
+    ]
+}
 ```
 
 ### Request (Run `chcp 65001` first if you want to use CMD in order to adjust utf-8 display)
 
-`curl -F "file=@./1.jpg" https://birdid.iscas.ac.cn:8080/`
-`curl -F "file=@./1.jpg" http://birdid.iscas.ac.cn:5000/`
+```
+curl -F "file=@./1.png" https://birdid.iscas.ac.cn:8080/
+curl -F "file=@./1.png" http://birdid.iscas.ac.cn:5000/
+```
 
 ---
 
@@ -42,14 +112,17 @@ Start
 ```
 conda activate bird
 
-nohup gunicorn -b 127.0.0.1:8000 -t 3600 cas_bird_server:app > ./log/server.log&
+nohup gunicorn -w=8 -t 3600 cas_bird_server:app --certfile ./ssl/birdid.iscas.ac.cn.pem --keyfile ./ssl/birdid.iscas.ac.cn.key -b 0.0.0.0:8080 > ./log/server.log&
 
-nohup gunicorn -b 127.0.0.1:7000 -t 3600 cas_bird_server_http:app > ./log/server_http.log&
+nohup gunicorn -b 127.0.0.1:8000 -t 3600 wsgi:app > ./log/server.log&
+
+nohup gunicorn -w=4 -b 127.0.0.1:7000 -t 3600 cas_bird_server_http:app > ./log/server_http.log&
 ```
 
 Close
 ```
 ps -aux|grep cas_bird_server
+pstree -ap|grep gunicorn
 kill -9 xxxxxx 
 ```
 
@@ -58,24 +131,3 @@ kill -9 xxxxxx
 ### BirdSpider
 
 A spider for getting `./resource/target.txt`. Information comes from http://www.birder.cn
-
----
-
-# Bilinear-CNN Training
-
-Mean field approximation of Bilinear CNN for Fine-grained recognition
-* Step 1. Fine-tune the fc layer only.
-    It gives 75.47% accuracy on CUB.
-    ```
-    $ cd ./package/bcnn
-    $ CUDA_VISIBLE_DEVICES=0 python ./src/get_conv.py
-    $ nohup python ./src/train.py --base_lr 1e0 --batch_size 64 --epochs 80 --weight_decay 1e-5 > ./log/train_fc.log&
-    ```
-
-* Step 2. Fine-tune all layers.
-    It gives 84.41% accuracy on CUB.
-    ```
-    $ cd ./package/bcnn
-    $ nohup python ./src/train.py --base_lr 1e-2 --batch_size 64 --epochs 80 --weight_decay 1e-5 --pretrained "bcnn_fc_epoch_best.pth" > ./log/train_all.log&
-    ```
-

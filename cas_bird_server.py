@@ -47,7 +47,6 @@ class BCNN(torch.nn.Module):
         features, torch.nn.Module: Convolution and pooling layers.
         fc, torch.nn.Module: 164.
     """
-
     def __init__(self):
         """Declare all needed layers."""
 
@@ -98,7 +97,6 @@ class BCNNManager(object):
         _train_loader: Training data.
         _test_loader: Testing data.
     """
-
     def __init__(self, path):
         """Prepare the network, criterion, solver, and data.
 
@@ -188,116 +186,130 @@ def return_img_stream(img_path):
 # 处理请求
 @app.route('/', methods=['POST'])
 def upload_file():
+    file = request.files['file']
+    filename = file.filename.split(".")[0]
+
+    try:
+        shutil.rmtree("./image/")
+        shutil.rmtree("./static/" + filename)
+    except OSError as e:
+        print(e)
+
+    img_raw = Image.open(file).convert("RGB")
+    detected, croppeds = detect(img_raw)
+
+    # No birds in pic
+    if "bird" not in detected:
+        results = json.dumps({
+            "birdExists": False,
+            "detected": detected
+        },
+                             ensure_ascii=False).encode('utf-8')
+        print(results)
+        return results, 200, {"ContentType": "application/json"}
+
+    # Birds in pic
+    results = []
+    count = 0
+    for coordinate in detected["bird"]:
+        img = croppeds[count]
+        result = model.test(img)
+        results.append([coordinate, result])
+        count += 1
+
+    results = json.dumps({
+        "birdExists": True,
+        "detected": results
+    },
+                         ensure_ascii=False).encode('utf-8')
+    print(results)
+
     try:
         shutil.rmtree("./image/")
         shutil.rmtree("./static/")
     except OSError as e:
         print(e)
 
-    file = request.files['file']
-    img = Image.open(file).convert("RGB")
-    os.makedirs("./image/", exist_ok=True)
-    filename = file.filename.split(".")[0]
-    img.save("./image/" + filename + ".jpg")
-    detected = detect()
-
-    # No birds in pic
-    if "bird" not in detected:
-        results = json.dumps(
-            {"birdExists": False, "detected": detected}, ensure_ascii=False).encode('utf-8')
-        return results, 200, {"ContentType": "application/json"}
-
-    # Birds in pic
-    results = []
-    i = 0
-    for coordinate in detected["bird"]:
-        i += 1
-        img = Image.open("./static/" + filename + "/bird_" + str(i) + ".png")
-        result = model.test(img)
-        results.append([coordinate, result])
-
-    results = json.dumps(
-        {"birdExists": True, "detected": results}, ensure_ascii=False).encode('utf-8')
     return results, 200, {"ContentType": "application/json"}
 
 
-@app.route('/upload', methods=['GET', 'POST'])
-@app.route('/upload/', methods=['GET', 'POST'])
-def main_page():
-    if request.method == 'POST':
+# @app.route('/upload', methods=['GET', 'POST'])
+# @app.route('/upload/', methods=['GET', 'POST'])
+# def main_page():
+#     if request.method == 'POST':
 
-        try:
-            shutil.rmtree("./image/")
-            shutil.rmtree("./static/")
-        except OSError as e:
-            print(e)
+#         try:
+#             shutil.rmtree("./image/")
+#             shutil.rmtree("./static/")
+#         except OSError as e:
+#             print(e)
 
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            # filename = secure_filename(file.filename)
-            # file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+#         file = request.files['file']
+#         if file and allowed_file(file.filename):
 
-            img = Image.open(file).convert("RGB")
-            os.makedirs("./image/", exist_ok=True)
-            os.makedirs("./static/", exist_ok=True)
-            filename = file.filename.split(".")[0]
-            img.save("./image/" + filename + ".jpg")
-            if "bird" not in detect():
-                html = '''
-                    <!doctype html>
-                    <title>Error!</title>
-                    <h1>Waterbird doesn't exist in the picture!</h1>
-                    <a href = "/upload"> Continue to upload... </a>  
-                '''
-                html += "<img src='/static/" + filename + ".png'>"
-                return html
+#             img = Image.open(file).convert("RGB")
+#             os.makedirs("./image/", exist_ok=True)
+#             os.makedirs("./static/", exist_ok=True)
+#             filename = file.filename.split(".")[0]
+#             img.save("./image/" + filename + ".jpg")
+#             if "bird" not in detect():
+#                 html = '''
+#                     <!doctype html>
+#                     <title>Error!</title>
+#                     <h1>Waterbird doesn't exist in the picture!</h1>
+#                     <a href = "/upload"> Continue to upload... </a>
+#                 '''
+#                 html += "<img src='/static/" + filename + ".png'>"
+#                 return html
 
-            results = model.test(img)
+#             results = model.test(img)
 
-            html = '''
-                    <!doctype html>
-                    <title>Success!</title>
-                    <h1>Success!</h1>
-                    <a href = "/upload"> Continue to upload... </a>   
-                    <p>Your input:</p>
-                    '''
-            html += "<img src='/static/" + filename + ".png'>"
+#             html = '''
+#                     <!doctype html>
+#                     <title>Success!</title>
+#                     <h1>Success!</h1>
+#                     <a href = "/upload"> Continue to upload... </a>
+#                     <p>Your input:</p>
+#                     '''
+#             html += "<img src='/static/" + filename + ".png'>"
 
-            html += '''
-                    <p>The result is:</p>
-                    '''
-            count = 0
-            for result in results:
-                count += 1
+#             html += '''
+#                     <p>The result is:</p>
+#                     '''
+#             count = 0
+#             for result in results:
+#                 count += 1
 
-                birdNameCN = result.get("birdNameCN")
-                birdNameEN = bd[result.get("birdNum")]['英文名']
-                birdpicURL = bd[result.get("birdNum")]['pic']
+#                 birdNameCN = result.get("birdNameCN")
+#                 birdNameEN = bd[result.get("birdNum")]['英文名']
+#                 birdpicURL = bd[result.get("birdNum")]['pic']
 
-                p = result.get("probability")
+#                 p = result.get("probability")
 
-                html += '<p>No.' + str(count) + \
-                    ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + \
-                        '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
-            return html
+#                 html += '<p>No.' + str(count) + \
+#                     ' : <br>Chinese Name : ' + birdNameCN + '<br>English Name : ' + birdNameEN + \
+#                         '<br>Probability : ' + p + '%</p><img src="'+birdpicURL+'" width="300px">'
+#             return html
 
-    return '''
-    <!doctype html>
-    <title>ISCAS Waterbirds Recognition Service</title>
-    <img src="https://raw.githubusercontent.com/zolars/pic-bed/master//20191030165058.png">
-    <h2>Welcome to ISCAS Waterbirds Recognition Service</h2>
-    <h3>Upload new Image</h3>
-    <form action="" method=post enctype=multipart/form-data>
-    <p><input type=file name=file>
-        <input type=submit value=Upload>
-    </form>
-    '''
+#     return '''
+#     <!doctype html>
+#     <title>ISCAS Waterbirds Recognition Service</title>
+#     <img src="https://raw.githubusercontent.com/zolars/pic-bed/master//20191030165058.png">
+#     <h2>Welcome to ISCAS Waterbirds Recognition Service</h2>
+#     <h3>Upload new Image</h3>
+#     <form action="" method=post enctype=multipart/form-data>
+#     <p><input type=file name=file>
+#         <input type=submit value=Upload>
+#     </form>
+#     '''
 
-
-app.run(host='0.0.0.0',
-        port=8080,
-        debug=False,
-        ssl_context=('./ssl/birdid.iscas.ac.cn.pem',
-                     './ssl/birdid.iscas.ac.cn.key'))
+if __name__ == '__main__':
+    from werkzeug.contrib.fixers import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app)
+    app.run(host='0.0.0.0',
+            port=8080,
+            debug=False,
+            ssl_context=('./ssl/birdid.iscas.ac.cn.pem',
+                         './ssl/birdid.iscas.ac.cn.key'))
 
 print("\n------------------------Web End------------------------\n")
