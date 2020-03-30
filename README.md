@@ -108,15 +108,12 @@ $ conda env update -f environment.yml
 Start
 ```
 conda activate bird
-
-nohup gunicorn -w=8 -t 3600 cas_bird_server:app --certfile ./ssl/birdid.iscas.ac.cn.pem --keyfile ./ssl/birdid.iscas.ac.cn.key -b 0.0.0.0:8080 > ./log/server.log&
+gunicorn -c gunicorn.conf.py cas_bird_server:app
 ```
 
 Close
 ```
-ps -aux|grep cas_bird_server
-pstree -ap|grep gunicorn
-kill -9 xxxxxx 
+pkill gunicorn
 ```
 
 ---
