@@ -7,16 +7,13 @@ Usage:
     conda activate bird
     conda install flask pytorch torchvision cudatoolkit=9.0 -c pytorch
     
-    nohup gunicorn -b 127.0.0.1:8000 src.cas_bird_server:app -k gevent --worker-connections 10 > ./log/server.log&
-
-    https://birdid.iscas.ac.cn:8080/upload/
+    https://birdid.iscas.ac.cn:8080/
 """
 
 import os
 import time
 import sys
-import shutil
-from flask import Flask, request, redirect, url_for
+from flask import Flask, request, redirect, url_for, render_template
 import urllib.parse
 import json
 
@@ -26,7 +23,6 @@ import torch.nn.functional as F
 from PIL import Image
 import numpy as np
 
-from birddata import bd
 from package.yolov3.detect import detect
 
 torch.manual_seed(0)
@@ -39,13 +35,13 @@ class BCNN(torch.nn.Module):
     The B-CNN model is illustrated as follows.
     conv1^2 (64) -> pool1 -> conv2^2 (128) -> pool2 -> conv3^3 (256) -> pool3
     -> conv4^3 (512) -> pool4 -> conv5^3 (512) -> bilinear pooling
-    -> sqrt-normalize -> L2-normalize -> fc (164).
+    -> sqrt-normalize -> L2-normalize -> fc (172).
     The network accepts a 3*448*448 input, and the pool5 activation has shape
     512*28*28 since we down-sample 5 times.
 
     Attributes:
         features, torch.nn.Module: Convolution and pooling layers.
-        fc, torch.nn.Module: 164.
+        fc, torch.nn.Module: 172.
     """
     def __init__(self):
         """Declare all needed layers."""
@@ -57,7 +53,7 @@ class BCNN(torch.nn.Module):
         self.features = torch.nn.Sequential(
             *list(self.features.children())[:-1])  # Remove pool5.
         # Linear classifier.
-        self.fc = torch.nn.Linear(512**2, 164)
+        self.fc = torch.nn.Linear(512**2, 172)
 
     def forward(self, X):
         """Forward pass of the network.
@@ -66,7 +62,7 @@ class BCNN(torch.nn.Module):
             X, torch.autograd.Variable of shape N*3*448*448.
 
         Returns:
-            Score, torch.autograd.Variable of shape N*164.
+            Score, torch.autograd.Variable of shape N*172.
         """
 
         N = X.size()[0]
@@ -80,7 +76,7 @@ class BCNN(torch.nn.Module):
         X = torch.sqrt(X + 1e-5)
         X = torch.nn.functional.normalize(X)
         X = self.fc(X)
-        # assert X.size() == (N, 164)
+        # assert X.size() == (N, 172)
         return X
 
 
@@ -155,18 +151,15 @@ class BCNNManager(object):
 
 project_root = os.popen('pwd').read().strip()
 path = {
-    'model': "./resource/model.pth",
+    'model': "./resource/model_172.pth",
     'imgfile': os.path.join(project_root, '1.jpg'),
 }
 model = BCNNManager(path)
 
 print("\n------------------------Web Start------------------------\n")
 
-UPLOAD_FOLDER = './upload'
 ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
-
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def allowed_file(filename):
@@ -188,12 +181,6 @@ def return_img_stream(img_path):
 def upload_file():
     file = request.files['file']
     filename = file.filename.split(".")[0]
-
-    try:
-        shutil.rmtree("./image/")
-        shutil.rmtree("./static/" + filename)
-    except OSError as e:
-        print(e)
 
     img_raw = Image.open(file).convert("RGB")
     detected, croppeds = detect(img_raw)
@@ -224,13 +211,38 @@ def upload_file():
                          ensure_ascii=False).encode('utf-8')
     print(results)
 
-    try:
-        shutil.rmtree("./image/")
-        shutil.rmtree("./static/")
-    except OSError as e:
-        print(e)
-
     return results, 200, {"ContentType": "application/json"}
+
+
+# 具有上传功能的页面
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_test():
+    return render_template('upload.html')
+
+
+@app.route('/api/upload', methods=['POST'], strict_slashes=False)
+def api_upload():
+    file_dir = os.path.join("../upload/")
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    f = request.files['myfile']
+    if f:
+        fname = f.filename
+        ext = fname.rsplit('.', 1)[1]
+        unix_time = int(time.time())
+        new_filename = str(unix_time) + '.' + ext
+        f.save(os.path.join(file_dir, new_filename))  # 保存文件到upload目录
+
+        return json.dumps(({
+            "errno": 0,
+            "errmsg": "上传成功"
+        }), ensure_ascii=False).encode('utf-8')
+    else:
+        return json.dumps(({
+            "errno": 1001,
+            "errmsg": "上传失败"
+        }),
+                          ensure_ascii=False).encode('utf-8')
 
 
 # @app.route('/upload', methods=['GET', 'POST'])
@@ -311,5 +323,3 @@ if __name__ == '__main__':
             debug=False,
             ssl_context=('./ssl/birdid.iscas.ac.cn.pem',
                          './ssl/birdid.iscas.ac.cn.key'))
-
-print("\n------------------------Web End------------------------\n")

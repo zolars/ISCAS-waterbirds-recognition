@@ -1,11 +1,8 @@
 # Quick start
-Visit https://birdid.iscas.ac.cn:8080/upload or http://birdid.iscas.ac.cn:5000/upload.
 
-Send a POST request with a photo to https://birdid.iscas.ac.cn:8080/ or http://birdid.iscas.ac.cn:5000/.
+Send a POST request with a photo to https://birdid.iscas.ac.cn:8080/ and http://birdid.iscas.ac.cn:5000/.
 
-The server will response a json file whose form is: [{"birdNum" :"int","birdNameCN":"str", "probability":"float"}, ...]
-
-# Response examples
+The server will response a json file whose form such as
 
 ```json
 {
@@ -113,10 +110,6 @@ Start
 conda activate bird
 
 nohup gunicorn -w=8 -t 3600 cas_bird_server:app --certfile ./ssl/birdid.iscas.ac.cn.pem --keyfile ./ssl/birdid.iscas.ac.cn.key -b 0.0.0.0:8080 > ./log/server.log&
-
-nohup gunicorn -b 127.0.0.1:8000 -t 3600 wsgi:app > ./log/server.log&
-
-nohup gunicorn -w=4 -b 127.0.0.1:7000 -t 3600 cas_bird_server_http:app > ./log/server_http.log&
 ```
 
 Close
