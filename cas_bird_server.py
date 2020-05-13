@@ -13,7 +13,7 @@ Usage:
 import os
 import time
 import sys
-from flask import Flask, request, redirect, url_for, render_template
+from flask import Flask, request, redirect, url_for, render_template, make_response
 import urllib.parse
 import json
 
@@ -212,6 +212,24 @@ def upload_file():
     print(results)
 
     return results, 200, {"ContentType": "application/json"}
+
+
+@app.route('/getImage', methods=['GET'])
+def get_image():
+    birdNameCN = request.args.get("birdNameCN")
+
+    try:
+        with open(os.path.join("images", birdNameCN + ".jpg"), "rb") as f:
+            img = f.read()
+            response = make_response(img)
+            response.headers['Content-Type'] = 'image/png'
+            return response
+    except FileNotFoundError:
+        with open(os.path.join("images", "404.png"), "rb") as f:
+            img = f.read()
+            response = make_response(img)
+            response.headers['Content-Type'] = 'image/png'
+            return response
 
 
 # 具有上传功能的页面
