@@ -86,7 +86,7 @@ The server will response a json file whose form such as
 
 ```
 curl -F "file=@./1.png" https://birdid.iscas.ac.cn:8080/
-curl -F "file=@./1.png" http://birdid.iscas.ac.cn:5000/
+curl -F "file=@./1.png" https://birdid.iscas.ac.cn:5000/
 ```
 
 ---

@@ -1,0 +1,20 @@
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/wr/miniconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/wr/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/wr/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/wr/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+cd /home/wr/project/bird
+conda activate bird
+pkill gunicorn
+gunicorn -c gunicorn.conf.py cas_bird_server:app
+echo "Done"

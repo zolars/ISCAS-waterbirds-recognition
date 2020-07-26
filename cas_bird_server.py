@@ -117,7 +117,7 @@ class BCNNManager(object):
                                              std=(0.229, 0.224, 0.225))
         ])
 
-        self.classes = open('./resource/classes.txt',
+        self.classes = open('./resource/classes_172.txt',
                             encoding='UTF-8').readlines()
 
     def test(self, image):
@@ -176,6 +176,11 @@ def return_img_stream(img_path):
     return img_stream
 
 
+@app.route('/.well-known/pki-validation', methods=['GET'])
+def ssl_check():
+    return '202005240000005xwbnmhpgxduqhp6citp01yvx7jdfr7xrs8ha7w51vz41qtsue'
+
+
 # 处理请求
 @app.route('/', methods=['POST'])
 def upload_file():
@@ -216,10 +221,10 @@ def upload_file():
 
 @app.route('/getImage', methods=['GET'])
 def get_image():
-    birdNameCN = request.args.get("birdNameCN")
+    picName = request.args.get("picName")
 
     try:
-        with open(os.path.join("images", birdNameCN + ".jpg"), "rb") as f:
+        with open(os.path.join("images", picName + ".jpg"), "rb") as f:
             img = f.read()
             response = make_response(img)
             response.headers['Content-Type'] = 'image/png'
@@ -230,6 +235,53 @@ def get_image():
             response = make_response(img)
             response.headers['Content-Type'] = 'image/png'
             return response
+
+
+@app.route('/getVisitAmount', methods=['GET'])
+def get_visit_amount():
+    import requests
+    import datetime
+    with open('data/appsecret.json', 'r') as f:
+        data = json.load(f)
+        appid = data["AppID"]
+        secret = data["AppSecret"]
+        url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid={appid}&secret={secret}".format(
+            appid=appid, secret=secret)
+        response = requests.get(url=url).text
+        access_token = json.loads(response)["access_token"]
+
+        url = "https://api.weixin.qq.com/datacube/getweanalysisappiddailysummarytrend?access_token={access_token}".format(
+            access_token=access_token)
+
+        date = datetime.datetime.now() - datetime.timedelta(days=2)
+        data = {
+            "begin_date": date.strftime('%Y%m%d'),
+            "end_date": date.strftime('%Y%m%d')
+        }
+        response = requests.post(url=url, data=json.dumps(data)).text
+        return response
+
+
+@app.route('/correct', methods=['POST'], strict_slashes=False)
+def correct():
+    file_dir = os.path.join("data/user_corrected/")
+    if not os.path.exists(file_dir):
+        os.makedirs(file_dir)
+    f = request.files['image']
+    birdNameCN = request.form['birdNameCN']
+    coordinate = json.loads(request.form['coordinate'])
+
+    if f:
+        img_raw = Image.open(f).convert("RGB")
+        img_cropped = img_raw.crop((coordinate['x1'], coordinate['y1'],
+                                    coordinate['x2'], coordinate['y2']))
+        unix_time = int(time.time())
+        img_cropped.save(
+            os.path.join(file_dir, birdNameCN + "_" + str(unix_time) + ".jpg"))
+
+        return 'success'
+    else:
+        return 'error'
 
 
 # 具有上传功能的页面
@@ -266,8 +318,8 @@ def api_upload():
 if __name__ == '__main__':
     from werkzeug.contrib.fixers import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app)
-    app.run(host='0.0.0.0',
-            port=8080,
+    app.run(host='127.0.0.1',
+            port=5000,
             debug=False,
             ssl_context=('./ssl/birdid.iscas.ac.cn.pem',
                          './ssl/birdid.iscas.ac.cn.key'))

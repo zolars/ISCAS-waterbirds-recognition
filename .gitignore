@@ -2,11 +2,14 @@
 data
 archive
 model
+ssl
 log
 package
 static
 test
 __pycache__
+.well-known
+
 
 *.pyc
 *.pth

@@ -23,5 +23,5 @@ errorlog = './log/gunicorn_error.log'
 loglevel = 'warning'
 
 # SSL设置
-certfile = './ssl/birdid.iscas.ac.cn.pem'
-keyfile = './ssl/birdid.iscas.ac.cn.key'
+certfile = './ssl/ssl.pem'
+keyfile = './ssl/ssl.key'
